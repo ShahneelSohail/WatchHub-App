@@ -1,0 +1,350 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum WatchStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum StrapType {
+  BELT
+  CHAIN
+}
+
+enum ReviewStatus {
+  APPROVED
+  HIDDEN
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  STRIPE
+  COD
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+}
+
+enum ShippingMethod {
+  STANDARD
+  EXPRESS
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  name          String
+  phone         String?
+  passwordHash  String
+  role          Role     @default(CUSTOMER)
+  isBlocked     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  addresses     Address[]
+  cartItems     CartItem[]
+  wishlist      WishlistItem[]
+  reviews       Review[]
+  orders        Order[]
+  notifications Notification[]
+  tickets       SupportTicket[]
+  ticketReplies TicketMessage[]
+}
+
+model Address {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  recipient   String
+  addressLine String
+  city        String
+  state       String
+  zip         String
+  country     String
+  phone       String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Brand {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+  logoUrl     String?
+  watches     Watch[]
+}
+
+model Category {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+  imageUrl    String?
+  watches     Watch[]
+}
+
+model Watch {
+  id               Int         @id @default(autoincrement())
+  sku              String      @unique
+  slug             String      @unique
+  name             String
+  description      String
+  brandId          Int
+  categoryId       Int
+  price            Decimal     @db.Decimal(10, 2)
+  salePrice        Decimal?    @db.Decimal(10, 2)
+  stock            Int         @default(0)
+  images           String[]
+  specifications   Json        @default("{}")
+  hasBeltOption    Boolean     @default(false)
+  hasChainOption   Boolean     @default(false)
+  status           WatchStatus @default(PUBLISHED)
+  isFeatured       Boolean     @default(false)
+  isLimitedEdition Boolean     @default(false)
+  unitsSold        Int         @default(0)
+  createdAt        DateTime    @default(now())
+
+  brand            Brand       @relation(fields: [brandId], references: [id], onDelete: NoAction)
+  category         Category    @relation(fields: [categoryId], references: [id], onDelete: NoAction)
+  colors           WatchColor[]
+  cartItems        CartItem[]
+  wishlist         WishlistItem[]
+  reviews          Review[]
+  orderItems       OrderItem[]
+
+  @@index([brandId])
+  @@index([categoryId])
+  @@index([status, isFeatured])
+}
+
+model WatchColor {
+  id      Int    @id @default(autoincrement())
+  watchId Int
+  name    String
+  hex     String
+  image   String?
+  watch   Watch  @relation(fields: [watchId], references: [id], onDelete: Cascade)
+
+  @@index([watchId])
+}
+
+model CartItem {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  watchId      Int
+  quantity     Int
+  strapType    StrapType?
+  strapColor   String?
+  productColor String?
+  createdAt    DateTime   @default(now())
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  watch        Watch      @relation(fields: [watchId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model WishlistItem {
+  id      Int      @id @default(autoincrement())
+  userId  Int
+  watchId Int
+  addedAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  watch   Watch    @relation(fields: [watchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, watchId])
+}
+
+model Review {
+  id         Int          @id @default(autoincrement())
+  userId     Int
+  watchId    Int
+  rating     Int
+  comment    String
+  status     ReviewStatus @default(APPROVED)
+  adminReply String?
+  createdAt  DateTime     @default(now())
+
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  watch      Watch        @relation(fields: [watchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, watchId])
+  @@index([watchId, status])
+}
+
+model Coupon {
+  id           Int        @id @default(autoincrement())
+  code         String     @unique
+  type         CouponType
+  value        Decimal    @db.Decimal(10, 2)
+  minAmount    Decimal?   @db.Decimal(10, 2)
+  startsAt     DateTime?
+  expiresAt    DateTime?
+  isActive     Boolean    @default(true)
+  usageLimit   Int?
+  usageCount   Int        @default(0)
+  limitPerUser Int?
+  createdAt    DateTime   @default(now())
+
+  orders       Order[]
+}
+
+model Order {
+  id              Int            @id @default(autoincrement())
+  userId          Int
+  status          OrderStatus
+  paymentMethod   PaymentMethod
+  paymentStatus   PaymentStatus  @default(UNPAID)
+  shippingMethod  ShippingMethod
+  subtotal        Decimal        @db.Decimal(10, 2)
+  shippingCost    Decimal        @db.Decimal(10, 2)
+  discount        Decimal        @db.Decimal(10, 2)
+  total           Decimal        @db.Decimal(10, 2)
+  couponId        Int?
+  shippingAddress Json
+  stripeSessionId String?        @unique
+  trackingNumber  String?
+  courierName     String?
+  adminNote       String?
+  createdAt       DateTime       @default(now())
+
+  user            User           @relation(fields: [userId], references: [id])
+  coupon          Coupon?        @relation(fields: [couponId], references: [id])
+  items           OrderItem[]
+  events          OrderEvent[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id           Int        @id @default(autoincrement())
+  orderId      Int
+  watchId      Int?
+  name         String
+  image        String?
+  quantity     Int
+  unitPrice    Decimal    @db.Decimal(10, 2)
+  strapType    StrapType?
+  strapColor   String?
+  productColor String?
+
+  order        Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  watch        Watch?     @relation(fields: [watchId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+}
+
+model OrderEvent {
+  id        Int         @id @default(autoincrement())
+  orderId   Int
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}
+
+model Banner {
+  id        Int     @id @default(autoincrement())
+  imageUrl  String
+  title     String?
+  subtitle  String?
+  link      String?
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+}
+
+model Faq {
+  id        Int    @id @default(autoincrement())
+  question  String
+  answer    String
+  category  String @default("General")
+  sortOrder Int    @default(0)
+}
+
+model SupportTicket {
+  id        Int            @id @default(autoincrement())
+  userId    Int
+  subject   String
+  status    TicketStatus   @default(OPEN)
+  priority  TicketPriority @default(MEDIUM)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  TicketMessage[]
+
+  @@index([userId])
+}
+
+model TicketMessage {
+  id        Int           @id @default(autoincrement())
+  ticketId  Int
+  authorId  Int
+  message   String
+  createdAt DateTime      @default(now())
+
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+}
