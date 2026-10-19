@@ -1,62 +1,21 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.buildlog/
-.history
-.svn/
-migrate_working_dir/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-**/ios/Flutter/App.framework
-**/ios/Flutter/Flutter.framework
-**/ios/Flutter/Generated.xcconfig
-**/ios/Flutter/flutter_export_environment.sh
-**/ios/Flutter/App.podspec
-**/ios/ServiceDefinitions.json
-**/android/app/src/main/java/io/flutter/plugins/
-**/android/local.properties
-**/android/key.properties
-**/android/app/google-services.json
-**/.dart_tool/
-**/.flutter-plugins
-**/.flutter-plugins-dependencies
-**/.packages
-**/.pub-cache/
-**/.pub/
-**/build/
-
-# Symbolication related
-app.*.symbols
-
-# Executable python binary
-**/*.py[co]
-
-# Environment variables
+# Secrets and local configuration
 .env
 .env.*
-functions/.env
+!.env.example
 
-# Android Studio will create this folder for testing and stories
-**/android/.gradle/
-**/android/app/key.properties
-**/*.keystore
-**/*.jks
+# Node
+node_modules/
+/dist/
+/*/dist/
+.next/
+.turbo/
+coverage/
 
-# iOS/macOS
-**/ios/.generated/
-**/ios/.last_build_id
-**/ios/DerivedData/
-**/*.IPHONE
-**/*.simulator
+# Flutter (legacy app) build output
+.dart_tool/
+legacy/build/
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
