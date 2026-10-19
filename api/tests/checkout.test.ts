@@ -21,6 +21,14 @@ const setup = async (options: { stock?: number; quantity?: number; price?: numbe
   return { ...buyer, watch, address };
 };
 
+describe('checkout options', () => {
+  it('tells the web app whether card payments are available and what shipping costs', async () => {
+    const { agent } = await signedInUser();
+    const res = await agent.get('/api/checkout/options').expect(200);
+    expect(res.body.data).toEqual({ cardPayments: true, shippingCosts: { STANDARD: 0, EXPRESS: 25 } });
+  });
+});
+
 describe('checkout quote', () => {
   it('totals the cart with shipping and a percentage coupon', async () => {
     const { agent } = await setup();

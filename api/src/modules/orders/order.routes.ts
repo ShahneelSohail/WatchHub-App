@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { env } from '../../config/env';
 import { asyncHandler, badRequest, notFound } from '../../lib/http';
 import { pageMeta, pageQuery, paginate } from '../../lib/pagination';
 import { prisma } from '../../lib/prisma';
@@ -7,6 +8,7 @@ import { getStripe } from '../../lib/stripe';
 import { currentUser, requireAuth } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
 import { cancelOrder, createCheckoutSession, markPaid, orderInclude, placeOrder, quoteCart, toOrderDto } from './order.service';
+import { SHIPPING_COSTS } from './pricing';
 
 const idParams = z.object({ id: z.coerce.number().int().positive() });
 
@@ -27,6 +29,10 @@ const findOwnOrder = async (id: number, userId: number) => {
 
 export const checkoutRouter = Router();
 checkoutRouter.use(requireAuth);
+
+checkoutRouter.get('/options', (_req, res) => {
+  res.json({ data: { cardPayments: Boolean(env.STRIPE_SECRET_KEY), shippingCosts: SHIPPING_COSTS } });
+});
 
 checkoutRouter.post(
   '/quote',

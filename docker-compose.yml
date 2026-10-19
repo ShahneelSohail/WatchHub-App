@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: watchhub
+      POSTGRES_PASSWORD: watchhub
+      POSTGRES_DB: watchhub
+    ports:
+      - "5432:5432"
+    volumes:
+      - watchhub-data:/var/lib/postgresql/data
+
+volumes:
+  watchhub-data:
