@@ -45,7 +45,7 @@ export const Navbar = () => {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-cream/90 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-6 px-5 md:px-8">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-3 px-5 sm:gap-6 md:px-8">
         <Link href="/" className="font-serif text-2xl font-semibold tracking-tight text-navy">
           Watch<span className="text-gold">Hub</span>
         </Link>
@@ -65,7 +65,7 @@ export const Navbar = () => {
             className="w-full rounded-full border border-line bg-ivory px-4 py-2 text-sm placeholder:text-faint focus:border-navy focus:outline-none"
           />
         </form>
-        <div className="ml-auto flex items-center gap-5 lg:ml-0">
+        <div className="ml-auto flex items-center gap-3 sm:gap-5 lg:ml-0">
           <IconLink href="/wishlist" label="Wishlist">
             <svg {...iconProps}>
               <path d="M12 20s-7-4.4-9-9a4.900 4.900 0 019-2.700A4.900 4.900 0 0121 11c-2 4.600-9 9-9 9z" />
@@ -109,7 +109,7 @@ export const Navbar = () => {
               </div>
             </details>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <LinkButton href="/login" variant="ghost">
                 Log in
               </LinkButton>
