@@ -1,0 +1,71 @@
+import { API_URL } from './config';
+import type { User } from './types';
+import { getToken, storeToken } from './session';
+
+export interface PageMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  unread?: number;
+}
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message);
+  }
+}
+
+interface Envelope<T> {
+  data: T;
+  meta?: PageMeta;
+  token?: string;
+}
+
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+const request = async <T>(method: Method, path: string, body?: unknown): Promise<Envelope<T>> => {
+  const token = getToken();
+  const response = await fetch(`${API_URL}/api${path}`, {
+    method,
+    headers: {
+      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (response.status === 204) return { data: undefined as T };
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new ApiError(payload?.error?.message ?? 'Something went wrong. Please try again.', response.status);
+  return payload as Envelope<T>;
+};
+
+export const api = {
+  get: async <T>(path: string) => (await request<T>('GET', path)).data,
+  page: async <T>(path: string) => {
+    const { data, meta } = await request<T[]>('GET', path);
+    return { items: data, meta: meta as PageMeta };
+  },
+  post: async <T>(path: string, body?: unknown) => (await request<T>('POST', path, body)).data,
+  put: async <T>(path: string, body?: unknown) => (await request<T>('PUT', path, body)).data,
+  patch: async <T>(path: string, body?: unknown) => (await request<T>('PATCH', path, body)).data,
+  delete: async <T>(path: string) => (await request<T>('DELETE', path)).data,
+  signIn: async (path: '/auth/login' | '/auth/register', body: unknown) => {
+    const { data, token } = await request<User>('POST', path, body);
+    await storeToken(token ?? null);
+    return data;
+  },
+};
+
+export const withQuery = (path: string, params: Record<string, string | number | undefined | null>): string => {
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') search.set(key, String(value));
+  });
+  const query = search.toString();
+  return query ? `${path}?${query}` : path;
+};

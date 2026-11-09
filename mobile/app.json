@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "WatchHub",
+    "slug": "watchhub",
+    "scheme": "watchhub",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font",
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    }
+  }
+}
