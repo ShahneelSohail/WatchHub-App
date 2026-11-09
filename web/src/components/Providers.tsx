@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { ApiError, api } from '@/lib/api';
 import type { User } from '@/lib/types';
+import { Icon } from './Icon';
 
 type ToastKind = 'success' | 'error';
 interface Toast {
@@ -12,7 +13,7 @@ interface Toast {
   message: string;
 }
 
-const TOAST_MS = 4000;
+const TOAST_MS: Record<ToastKind, number> = { success: 2600, error: 4500 };
 const ToastContext = createContext<(kind: ToastKind, message: string) => void>(() => undefined);
 export const useToast = () => useContext(ToastContext);
 
@@ -82,15 +83,16 @@ const ToastProvider = ({ children }: { children: ReactNode }) => {
   const push = useCallback((kind: ToastKind, message: string) => {
     const id = Date.now() + Math.random();
     setToasts(current => [...current, { id, kind, message }]);
-    setTimeout(() => setToasts(current => current.filter(toast => toast.id !== id)), TOAST_MS);
+    setTimeout(() => setToasts(current => current.filter(toast => toast.id !== id)), TOAST_MS[kind]);
   }, []);
 
   return (
     <ToastContext.Provider value={push}>
       {children}
-      <div className="pointer-events-none fixed right-4 bottom-4 z-[60] flex w-80 flex-col gap-2" role="status" aria-live="polite">
+      <div className="pointer-events-none fixed inset-x-4 bottom-24 z-[90] flex flex-col items-center gap-2 md:inset-x-auto md:right-6 md:bottom-6 md:items-end" role="status" aria-live="polite">
         {toasts.map(toast => (
-          <div key={toast.id} className={`pointer-events-auto rounded-xl border px-4 py-3 text-sm shadow-lg ${toast.kind === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-red-200 bg-red-50 text-red-900'}`}>
+          <div key={toast.id} className={`pointer-events-auto flex items-center gap-2.5 rounded-card px-4.5 py-3.5 text-sm font-medium text-on-primary shadow-dialog animate-rise ${toast.kind === 'success' ? 'bg-primary-dark' : 'bg-danger-ink'}`}>
+            <Icon name={toast.kind === 'success' ? 'check' : 'alert'} size={16} strokeWidth={2} />
             {toast.message}
           </div>
         ))}

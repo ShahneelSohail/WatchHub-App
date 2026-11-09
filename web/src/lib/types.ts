@@ -2,10 +2,10 @@ export type Role = 'ADMIN' | 'CUSTOMER';
 export type StrapType = 'BELT' | 'CHAIN';
 export type OrderStatus = 'PENDING_PAYMENT' | 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 export type PaymentMethod = 'STRIPE' | 'COD';
-export type PaymentStatus = 'UNPAID' | 'PAID';
+export type PaymentStatus = 'UNPAID' | 'PAID' | 'PARTLY_REFUNDED' | 'REFUNDED';
 export type ShippingMethod = 'STANDARD' | 'EXPRESS';
-export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
-export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type TicketStatus = 'OPEN' | 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+export type TicketPriority = 'LOW' | 'NORMAL' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
 export interface User {
   id: number;
@@ -37,6 +37,7 @@ export interface WatchColor {
   name: string;
   hex: string;
   image: string | null;
+  stock?: number | null;
 }
 
 export interface Rating {
@@ -64,6 +65,8 @@ export interface Watch {
   status: 'DRAFT' | 'PUBLISHED';
   isFeatured: boolean;
   isLimitedEdition: boolean;
+  isNew: boolean;
+  lowStockThreshold: number;
   rating: Rating;
   createdAt: string;
 }
@@ -84,11 +87,14 @@ export interface CartLine {
   strapColor: string | null;
   productColor: string | null;
   lineTotal: number;
+  available: number;
+  soldOut: boolean;
   watch: Watch;
 }
 
 export interface Address {
   id: number;
+  label: string | null;
   recipient: string;
   addressLine: string;
   city: string;
@@ -99,7 +105,7 @@ export interface Address {
   isDefault: boolean;
 }
 
-export type ShippingAddress = Omit<Address, 'id' | 'isDefault'>;
+export type ShippingAddress = Omit<Address, 'id' | 'isDefault' | 'label'>;
 
 export interface Totals {
   subtotal: number;
@@ -138,6 +144,7 @@ export interface Order extends Totals {
   trackingNumber: string | null;
   courierName: string | null;
   adminNote: string | null;
+  refundedAmount?: number;
   createdAt: string;
   items: OrderItem[];
   events: OrderEvent[];
@@ -158,6 +165,8 @@ export interface Notification {
 
 export interface Banner {
   id: number;
+  eyebrow: string | null;
+  watch: { id: number; slug: string; name: string } | null;
   imageUrl: string;
   title: string | null;
   subtitle: string | null;
@@ -202,6 +211,8 @@ export interface Ticket {
   priority: TicketPriority;
   createdAt: string;
   updatedAt: string;
+  orderId?: number | null;
+  order?: { id: number } | null;
   messages?: TicketMessage[];
   user?: { id: number; name: string; email: string };
 }

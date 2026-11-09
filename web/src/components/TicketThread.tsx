@@ -3,9 +3,9 @@
 import { useState, type FormEvent } from 'react';
 import { formatDateTime } from '@/lib/format';
 import type { Ticket } from '@/lib/types';
-import { Button, Card, ErrorState, Textarea } from './ui';
+import { Button, ErrorState, Textarea, cx } from './ui';
 
-export const TicketThread = ({ ticket, onReply, replyLabel = 'Send reply' }: { ticket: Ticket; onReply: (message: string) => Promise<unknown>; replyLabel?: string }) => {
+export const TicketThread = ({ ticket, onReply, replyLabel = 'Send reply', asCustomer }: { ticket: Ticket; onReply: (message: string) => Promise<unknown>; replyLabel?: string; asCustomer?: boolean }) => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
@@ -26,28 +26,31 @@ export const TicketThread = ({ ticket, onReply, replyLabel = 'Send reply' }: { t
   };
 
   return (
-    <div className="space-y-4">
-      <ul className="space-y-3">
-        {ticket.messages?.map(entry => (
-          <li key={entry.id} className={entry.author.role === 'ADMIN' ? 'pl-8' : 'pr-8'}>
-            <Card className={entry.author.role === 'ADMIN' ? 'border-navy/30 bg-navy/5' : ''}>
-              <p className="text-xs text-faint">
-                <span className="font-medium text-ink">{entry.author.role === 'ADMIN' ? 'WatchHub support' : entry.author.name}</span> · {formatDateTime(entry.createdAt)}
-              </p>
-              <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap">{entry.message}</p>
-            </Card>
-          </li>
-        ))}
+    <div className="flex flex-col">
+      <ul className="flex min-h-[260px] flex-col gap-3.5 bg-page p-5">
+        {ticket.messages?.map(entry => {
+          const staff = entry.author.role === 'ADMIN';
+          return (
+            <li key={entry.id} className={cx('flex max-w-[86%] flex-col gap-1.5 animate-rise', staff ? 'items-start self-start' : 'items-end self-end')}>
+              <span className="text-xs text-ink-secondary">
+                {staff ? 'WatchHub support' : asCustomer ? 'You' : entry.author.name} · {formatDateTime(entry.createdAt)}
+              </span>
+              <div className={cx('rounded-card border px-3.5 py-3 text-sm leading-[1.55] whitespace-pre-wrap', staff ? 'border-line bg-surface text-ink' : 'border-primary bg-primary text-on-primary')}>{entry.message}</div>
+            </li>
+          );
+        })}
       </ul>
       {closed ? (
-        <p className="text-sm text-muted">This ticket is closed.</p>
+        <p className="border-t border-line bg-success-surface px-5 py-4 text-sm text-success-ink">This ticket is closed.</p>
       ) : (
-        <form onSubmit={submit} className="space-y-3">
-          <Textarea value={message} onChange={event => setMessage(event.target.value)} required minLength={2} placeholder="Write a message" aria-label="Message" />
+        <form onSubmit={submit} className="flex flex-col gap-2.5 border-t border-line px-5 pt-3.5 pb-[18px]">
+          <Textarea value={message} onChange={event => setMessage(event.target.value)} required minLength={2} rows={3} placeholder="Write a reply" aria-label="Message" />
           {error && <ErrorState message={error} />}
-          <Button type="submit" disabled={sending}>
-            {sending ? 'Sending…' : replyLabel}
-          </Button>
+          <div className="flex justify-end">
+            <Button type="submit" loading={sending} disabled={!message.trim()}>
+              {replyLabel}
+            </Button>
+          </div>
         </form>
       )}
     </div>

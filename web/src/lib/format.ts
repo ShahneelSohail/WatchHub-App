@@ -4,7 +4,7 @@ const wholeCurrency = new Intl.NumberFormat('en-US', { style: 'currency', curren
 
 export const formatWholeMoney = (value: number): string => wholeCurrency.format(value);
 
-export const formatMoney = (value: number): string => currency.format(value);
+export const formatMoney = (value: number): string => (Number.isInteger(value) ? wholeCurrency : currency).format(value);
 
 export const formatDate = (value: string): string => new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 

@@ -2,31 +2,275 @@
 @source "../**/*.{ts,tsx}";
 
 @theme {
-    --color-navy: #1a237e;
-    --color-navy-dark: #0d1442;
-    --color-navy-light: #3949ab;
-    --color-gold: #b98a2e;
-    --color-gold-soft: #f7e7ce;
-    --color-rose: #b76e79;
-    --color-cream: #fdf8f3;
-    --color-ivory: #fffef9;
-    --color-sand: #f4ede3;
-    --color-ink: #2c2416;
-    --color-muted: #6b5d4d;
-    --color-faint: #9c8e7c;
-    --color-line: #e8dfd3;
-    --font-sans: var(--font-inter), "Inter", sans-serif;
-    --font-serif: var(--font-playfair), "Playfair Display", serif;
+    --color-primary: #1a237e;
+    --color-primary-hover: #3949ab;
+    --color-primary-dark: #0d1442;
+    --color-primary-tint: #e8eaf6;
+
+    --color-page: #f5f5f5;
+    --color-surface: #ffffff;
+    --color-line: #e5e7eb;
+    --color-line-strong: #d1d5db;
+
+    --color-ink: #111827;
+    --color-ink-secondary: #6b7280;
+    --color-ink-muted: #9ca3af;
+    --color-on-primary: #ffffff;
+
+    --color-success: #16a34a;
+    --color-success-ink: #166534;
+    --color-success-surface: #f0fdf4;
+    --color-success-border: #bbf7d0;
+    --color-warning: #d97706;
+    --color-warning-ink: #b45309;
+    --color-warning-surface: #fffbeb;
+    --color-warning-border: #fde68a;
+    --color-warning-edge: #fcd34d;
+    --color-danger: #dc2626;
+    --color-danger-ink: #b91c1c;
+    --color-danger-surface: #fef2f2;
+    --color-danger-border: #fecaca;
+    --color-info: #2563eb;
+    --color-info-ink: #1d4ed8;
+    --color-info-surface: #eff6ff;
+    --color-info-border: #bfdbfe;
+
+    --font-sans: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
+    --font-display: var(--font-playfair), "Playfair Display", ui-serif, Georgia, serif;
+    --text-display: 76px;
+    --text-display--line-height: 1;
+    --text-h1: 52px;
+    --text-h1--line-height: 1.04;
+    --text-h2: 44px;
+    --text-h2--line-height: 1.05;
+    --text-eyebrow: 12px;
+    --text-eyebrow--letter-spacing: 0.16em;
+
+    --radius-card: 2px;
+    --radius-pill: 9999px;
+    --radius-sheet: 20px;
+
+    --shadow-menu: 0 18px 48px rgb(17 24 39 / 0.12);
+    --shadow-dialog: 0 30px 80px rgb(13 20 66 / 0.25);
+
+    --ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    --animate-rise: rise 500ms var(--ease-out-soft) both;
+    --animate-fade: fade 300ms var(--ease-out-soft) both;
+    --animate-bar: bar 6000ms linear forwards;
+    --animate-pulse-soft: pulse-soft 1.4s ease-in-out infinite;
+    --animate-pop: pop 500ms var(--ease-out-soft) both;
+    --animate-drift: drift 6500ms ease-out both;
+
+    @keyframes rise {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+    @keyframes fade {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    @keyframes bar {
+        from {
+            transform: scaleX(0);
+        }
+        to {
+            transform: scaleX(1);
+        }
+    }
+    @keyframes pulse-soft {
+        0%,
+        100% {
+            opacity: 0.5;
+        }
+        50% {
+            opacity: 1;
+        }
+    }
+
+    --color-sidebar: #0d1442;
+    --color-link: #1a237e;
+}
+
+@utility wrap {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 1280px;
+    padding-inline: 16px;
+    @media (min-width: 768px) {
+        padding-inline: 24px;
+    }
+    @media (min-width: 1280px) {
+        padding-inline: 32px;
+    }
+}
+
+@utility no-scrollbar {
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+@theme static {
+    --color-pill-pending-payment-fg: #6b7280;
+    --color-pill-pending-payment-bg: #ffffff;
+    --color-pill-pending-payment-bd: #9ca3af;
+    --color-pill-pending-payment-dot: #9ca3af;
+    --color-pill-pending-fg: #111827;
+    --color-pill-pending-bg: #f5f5f5;
+    --color-pill-pending-bd: #e5e7eb;
+    --color-pill-pending-dot: #6b7280;
+    --color-pill-confirmed-fg: #1a237e;
+    --color-pill-confirmed-bg: #e8eaf6;
+    --color-pill-confirmed-bd: #e8eaf6;
+    --color-pill-confirmed-dot: #3949ab;
+    --color-pill-shipped-fg: #ffffff;
+    --color-pill-shipped-bg: #3949ab;
+    --color-pill-shipped-bd: #3949ab;
+    --color-pill-shipped-dot: #ffffff;
+    --color-pill-delivered-fg: #ffffff;
+    --color-pill-delivered-bg: #1a237e;
+    --color-pill-delivered-bd: #1a237e;
+    --color-pill-delivered-dot: #ffffff;
+    --color-pill-cancelled-fg: #6b7280;
+    --color-pill-cancelled-bg: #ffffff;
+    --color-pill-cancelled-bd: #e5e7eb;
+    --color-pill-cancelled-dot: #e5e7eb;
+    --color-pill-green-fg: #166534;
+    --color-pill-green-bg: #f0fdf4;
+    --color-pill-green-bd: #bbf7d0;
+    --color-pill-green-dot: #16a34a;
+    --color-pill-amber-fg: #b45309;
+    --color-pill-amber-bg: #fffbeb;
+    --color-pill-amber-bd: #fde68a;
+    --color-pill-amber-dot: #d97706;
+    --color-pill-red-fg: #b91c1c;
+    --color-pill-red-bg: #fef2f2;
+    --color-pill-red-bd: #fecaca;
+    --color-pill-red-dot: #dc2626;
+    --color-pill-blue-fg: #1d4ed8;
+    --color-pill-blue-bg: #eff6ff;
+    --color-pill-blue-bd: #bfdbfe;
+    --color-pill-blue-dot: #2563eb;
+    --color-pill-neutral-fg: #6b7280;
+    --color-pill-neutral-bg: #ffffff;
+    --color-pill-neutral-bd: #e5e7eb;
+    --color-pill-neutral-dot: #9ca3af;
+
+    --color-donut-delivered: #1a237e;
+    --color-donut-shipped: #3949ab;
+    --color-donut-confirmed: #7986cb;
+    --color-donut-pending: #c5cae9;
+    --color-donut-pending-payment: #e5e7eb;
+    --color-donut-cancelled: #6b7280;
+
+    @keyframes pop {
+        0% {
+            opacity: 0;
+            transform: scale(0.6);
+        }
+        60% {
+            opacity: 1;
+            transform: scale(1.08);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+    @keyframes drift {
+        from {
+            transform: scale(1.06);
+        }
+        to {
+            transform: scale(1);
+        }
+    }
+}
+
+[data-theme="dark"] {
+    color-scheme: dark;
+    --color-page: #0a0f30;
+    --color-surface: #0d1442;
+    --color-line: #262e6b;
+    --color-line-strong: #3a4390;
+    --color-ink: #f3f4f6;
+    --color-ink-secondary: #9ca3af;
+    --color-primary: #3949ab;
+    --color-primary-hover: #1a237e;
+    --color-primary-tint: #1a237e;
+    --color-sidebar: #050819;
+    --color-link: #c5cae9;
+
+    --color-pill-pending-payment-fg: #9ca3af;
+    --color-pill-pending-payment-bg: #0d1442;
+    --color-pill-pending-payment-bd: #6b7280;
+    --color-pill-pending-fg: #f3f4f6;
+    --color-pill-pending-bg: #141b52;
+    --color-pill-pending-bd: #262e6b;
+    --color-pill-pending-dot: #9ca3af;
+    --color-pill-confirmed-fg: #e8eaf6;
+    --color-pill-confirmed-bg: #1a237e;
+    --color-pill-confirmed-bd: #1a237e;
+    --color-pill-confirmed-dot: #c5cae9;
+    --color-pill-delivered-fg: #0d1442;
+    --color-pill-delivered-bg: #c5cae9;
+    --color-pill-delivered-bd: #c5cae9;
+    --color-pill-delivered-dot: #0d1442;
+    --color-pill-cancelled-fg: #9ca3af;
+    --color-pill-cancelled-bg: #0d1442;
+    --color-pill-cancelled-bd: #262e6b;
+    --color-pill-cancelled-dot: #6b7280;
+    --color-pill-green-fg: #86efac;
+    --color-pill-green-bg: rgb(22 163 74 / 0.14);
+    --color-pill-green-bd: rgb(22 163 74 / 0.4);
+    --color-pill-green-dot: #4ade80;
+    --color-pill-amber-fg: #fcd34d;
+    --color-pill-amber-bg: rgb(217 119 6 / 0.14);
+    --color-pill-amber-bd: rgb(217 119 6 / 0.45);
+    --color-pill-amber-dot: #fbbf24;
+    --color-pill-red-fg: #fca5a5;
+    --color-pill-red-bg: rgb(220 38 38 / 0.14);
+    --color-pill-red-bd: rgb(220 38 38 / 0.45);
+    --color-pill-red-dot: #f87171;
+    --color-pill-blue-fg: #93c5fd;
+    --color-pill-blue-bg: rgb(37 99 235 / 0.16);
+    --color-pill-blue-bd: rgb(37 99 235 / 0.45);
+    --color-pill-blue-dot: #60a5fa;
+    --color-pill-neutral-fg: #9ca3af;
+    --color-pill-neutral-bg: #0d1442;
+    --color-pill-neutral-bd: #262e6b;
+    --color-pill-neutral-dot: #6b7280;
 }
 
 html,
 body {
-    background-color: var(--color-cream);
+    background-color: var(--color-page);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-    background: var(--color-navy);
+    background: var(--color-primary);
     color: white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
 }

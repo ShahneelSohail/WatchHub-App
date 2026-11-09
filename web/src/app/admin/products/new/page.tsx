@@ -1,11 +1,5 @@
-import { ProductForm } from '@/components/admin/ProductForm';
-import { PageHeading } from '@/components/ui';
+import { ProductEditor } from '@/components/admin/ProductEditor';
 
 export default function NewProductPage() {
-  return (
-    <>
-      <PageHeading eyebrow="Catalogue" title="Add product" />
-      <ProductForm />
-    </>
-  );
+  return <ProductEditor />;
 }

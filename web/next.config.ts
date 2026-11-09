@@ -6,10 +6,13 @@ const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   async rewrites() {
-    return [
-      { source: '/api/:path*', destination: `${apiUrl}/api/:path*` },
-      { source: '/uploads/:path*', destination: `${apiUrl}/uploads/:path*` },
-    ];
+    return {
+      afterFiles: [
+        { source: '/api/:path*', destination: `${apiUrl}/api/:path*` },
+        { source: '/uploads/:path*', destination: `${apiUrl}/uploads/:path*` },
+      ],
+      fallback: [{ source: '/watches/:path*.webp', destination: `${apiUrl}/watches/:path*.webp` }],
+    };
   },
 };
 

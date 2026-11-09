@@ -9,7 +9,9 @@ export interface PageMeta {
 export class ApiError extends Error {
   constructor(
     message: string,
-    readonly status: number
+    readonly status: number,
+    readonly code?: string,
+    readonly details?: Record<string, unknown>
   ) {
     super(message);
   }
@@ -33,7 +35,7 @@ const request = async <T>(method: Method, path: string, body?: unknown): Promise
   if (response.status === 204) return { data: undefined as T };
 
   const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new ApiError(payload?.error?.message ?? 'Something went wrong. Please try again.', response.status);
+  if (!response.ok) throw new ApiError(payload?.error?.message ?? 'Something went wrong. Please try again.', response.status, payload?.error?.code, payload?.error?.details);
   return payload as Envelope<T>;
 };
 

@@ -16,6 +16,6 @@ export const RequireAuth = ({ role, children }: { role?: Role; children: ReactNo
   }, [loading, user, router, pathname]);
 
   if (loading || !user) return <Spinner />;
-  if (role && user.role !== role) return <EmptyState title="You don't have access to this page" action={<LinkButton href="/">Back to the store</LinkButton>} />;
+  if (role && user.role !== role) return <EmptyState icon="lock" title="You don't have access to this page" action={<LinkButton href="/" size="lg">Back to the store</LinkButton>} />;
   return children;
 };

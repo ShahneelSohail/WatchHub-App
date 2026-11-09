@@ -5,46 +5,48 @@ const columns = [
     title: 'Shop',
     links: [
       { href: '/watches', label: 'All watches' },
-      { href: '/watches?featured=true', label: 'Featured' },
+      { href: '/watches?featured=true', label: 'Featured watches' },
       { href: '/wishlist', label: 'Wishlist' },
     ],
   },
   {
-    title: 'Help',
+    title: 'Service',
     links: [
       { href: '/faq', label: 'FAQ' },
       { href: '/support', label: 'Contact support' },
       { href: '/orders', label: 'Track an order' },
     ],
   },
+  {
+    title: 'Account',
+    links: [
+      { href: '/orders', label: 'My orders' },
+      { href: '/account', label: 'Account settings' },
+      { href: '/notifications', label: 'Notifications' },
+    ],
+  },
 ];
 
 export const Footer = () => (
-  <footer className="mt-20 border-t border-line bg-navy-dark text-white/80">
-    <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-12 md:grid-cols-[2fr_1fr_1fr] md:px-8">
-      <div>
-        <p className="font-serif text-2xl font-semibold text-white">
-          Watch<span className="text-gold-soft">Hub</span>
-        </p>
-        <p className="mt-3 max-w-sm text-sm leading-relaxed">Considered watches, honest prices and a two-year warranty on every piece.</p>
+  <footer className="mt-auto bg-primary-dark text-on-primary">
+    <div className="wrap grid gap-8 pt-12 pb-10 md:grid-cols-3 xl:grid-cols-[1.4fr_repeat(3,1fr)] xl:gap-10 xl:pt-16 xl:pb-10">
+      <div className="flex flex-col gap-3.5 md:col-span-3 xl:col-span-1">
+        <span className="font-display text-[28px] font-semibold xl:text-3xl">WatchHub</span>
+        <p className="max-w-[300px] text-sm leading-relaxed text-primary-tint">Watches from four houses, inspected by hand and shipped free worldwide.</p>
       </div>
       {columns.map(column => (
-        <div key={column.title}>
-          <p className="mb-3 text-sm font-medium text-white">{column.title}</p>
-          <ul className="space-y-2 text-sm">
-            {column.links.map(link => (
-              <li key={link.href}>
-                <Link href={link.href} className="transition hover:text-white">
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <div key={column.title} className="flex flex-col gap-1 text-sm md:gap-3">
+          <p className="mb-1.5 text-xs font-semibold tracking-[0.14em] text-primary-tint uppercase">{column.title}</p>
+          {column.links.map(link => (
+            <Link key={link.label} href={link.href} className="flex min-h-8 items-center hover:text-primary-tint">
+              {link.label}
+            </Link>
+          ))}
         </div>
       ))}
     </div>
-    <p className="border-t border-white/10 py-5 text-center text-xs text-white/50">
-      A portfolio rebuild of the WatchHub team project. Payments run in Stripe test mode.
-    </p>
+    <div className="border-t border-white/15">
+      <p className="wrap pt-5 pb-28 text-xs text-primary-tint md:pb-7">© 2026 WatchHub · USD · English · Payments run in Stripe test mode</p>
+    </div>
   </footer>
 );

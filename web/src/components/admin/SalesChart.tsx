@@ -1,45 +1,75 @@
-import { formatMoney, formatWholeMoney } from '@/lib/format';
-import type { Dashboard } from '@/lib/types';
+'use client';
 
-const WIDTH = 640;
-const HEIGHT = 220;
-const PAD = { top: 16, right: 12, bottom: 28, left: 60 };
+import { useState } from 'react';
+import { formatMoney } from '@/lib/format';
+import { cx } from '../ui';
+import type { Analytics, AnalyticsRange } from './types';
 
-export const SalesChart = ({ days }: { days: Dashboard['salesByDay'] }) => {
-  const max = Math.max(...days.map(day => day.revenue), 1);
-  const innerWidth = WIDTH - PAD.left - PAD.right;
-  const innerHeight = HEIGHT - PAD.top - PAD.bottom;
-  const slot = innerWidth / days.length;
-  const ticks = [0, 0.5, 1].map(fraction => ({ value: max * fraction, y: PAD.top + innerHeight * (1 - fraction) }));
+const TICKS = 4;
+const CHART_HEIGHT = 220;
+const MAX_LABELS = 7;
+
+const niceStep = (rawStep: number): number => {
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+  const normalised = rawStep / magnitude;
+  return (normalised <= 1 ? 1 : normalised <= 2 ? 2 : normalised <= 2.5 ? 2.5 : normalised <= 5 ? 5 : 10) * magnitude;
+};
+
+const compactMoney = (value: number): string => (value >= 1000 ? `$${value / 1000}k` : `$${value}`);
+
+const labelFor = (range: AnalyticsRange, date: string): string =>
+  new Date(date).toLocaleDateString('en-GB', range === '12m' ? { month: 'short', timeZone: 'UTC' } : { day: 'numeric', month: 'short', timeZone: 'UTC' });
+
+export const SalesChart = ({ series, range }: { series: Analytics['series']; range: AnalyticsRange }) => {
+  const [hover, setHover] = useState<number | null>(null);
+  const step = niceStep(Math.max(...series.map(point => point.revenue), 1) / TICKS);
+  const top = step * TICKS;
+  const labelEvery = Math.ceil(series.length / MAX_LABELS);
+  const columns = { gridTemplateColumns: `repeat(${series.length}, minmax(0, 1fr))` };
 
   return (
-    <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" role="img" aria-label="Revenue over the last 14 days">
-      {ticks.map(tick => (
-        <g key={tick.y}>
-          <line x1={PAD.left} x2={WIDTH - PAD.right} y1={tick.y} y2={tick.y} className="stroke-line" />
-          <text x={PAD.left - 8} y={tick.y + 4} textAnchor="end" className="fill-faint text-[11px]">
-            {formatWholeMoney(tick.value)}
-          </text>
-        </g>
-      ))}
-      {days.map((day, index) => {
-        const height = (day.revenue / max) * innerHeight;
-        const x = PAD.left + index * slot + slot * 0.2;
-        return (
-          <g key={day.date}>
-            <rect x={x} y={PAD.top + innerHeight - height} width={slot * 0.6} height={height} rx={3} className="fill-navy">
-              <title>
-                {day.date}: {formatMoney(day.revenue)} from {day.orders} orders
-              </title>
-            </rect>
-            {index % 2 === 0 && (
-              <text x={x + slot * 0.3} y={HEIGHT - 8} textAnchor="middle" className="fill-faint text-[11px]">
-                {day.date.slice(5)}
-              </text>
-            )}
-          </g>
-        );
-      })}
-    </svg>
+    <div className="grid grid-cols-[40px_minmax(0,1fr)] gap-2.5">
+      <div className="-mt-1.5 flex flex-col justify-between text-right text-[11px] text-ink-secondary" style={{ height: CHART_HEIGHT }}>
+        {Array.from({ length: TICKS + 1 }, (_, index) => (
+          <span key={index}>{compactMoney(top - index * step)}</span>
+        ))}
+      </div>
+      <div className="flex min-w-0 flex-col gap-2">
+        <div
+          role="list"
+          aria-label={`Revenue per ${range === '12m' ? 'month' : 'day'}`}
+          onMouseLeave={() => setHover(null)}
+          className="relative grid items-end gap-2 border-b border-line bg-[repeating-linear-gradient(180deg,var(--color-page)_0_1px,transparent_1px_55px)]"
+          style={{ ...columns, height: CHART_HEIGHT }}
+        >
+          {series.map((point, index) => (
+            <div
+              key={point.date}
+              role="listitem"
+              tabIndex={0}
+              aria-label={`${labelFor(range, point.date)}: ${formatMoney(point.revenue)}`}
+              onMouseEnter={() => setHover(index)}
+              onFocus={() => setHover(index)}
+              onBlur={() => setHover(null)}
+              className="relative flex h-full items-end outline-none"
+            >
+              <div className={cx('w-full transition-[background-color,height] duration-500', hover === index ? 'bg-primary-hover' : 'bg-primary')} style={{ height: `${(point.revenue / top) * 100}%` }} />
+              {hover === index && (
+                <div className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 animate-fade rounded-card bg-primary-dark px-2.5 py-1.5 text-xs whitespace-nowrap text-white" style={{ bottom: `calc(${(point.revenue / top) * 100}% + 8px)` }}>
+                  <span className="font-semibold">{formatMoney(point.revenue)}</span> · {labelFor(range, point.date)}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-2 text-center text-[11px] text-ink-secondary" style={columns}>
+          {series.map((point, index) => (
+            <span key={point.date} className="whitespace-nowrap">
+              {index % labelEvery === labelEvery - 1 || index === series.length - 1 ? labelFor(range, point.date) : ''}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };
