@@ -11,11 +11,17 @@ const message = z.string().trim().min(2, 'Please write a message').max(2000, 'Me
 const ticketSchema = z.object({
   subject: z.string().trim().min(3, 'Please add a subject').max(150, 'Subject cannot exceed 150 characters'),
   message,
+  orderId: z.number().int().positive().nullish().transform(value => value ?? null),
 });
 
+const messageInclude = { orderBy: { createdAt: 'asc' }, include: { author: { select: { name: true, role: true } } } } as const;
+
 export const ticketInclude = {
-  messages: { orderBy: { createdAt: 'asc' }, include: { author: { select: { name: true, role: true } } } },
+  messages: { ...messageInclude, where: { kind: { not: 'INTERNAL' } } },
+  order: { select: { id: true, status: true } },
 } as const;
+
+export const adminTicketInclude = { messages: messageInclude, order: { select: { id: true, status: true, total: true } } } as const;
 
 const findOwnTicket = async (id: number, userId: number) => {
   const ticket = await prisma.supportTicket.findFirst({ where: { id, userId }, include: ticketInclude });
@@ -29,7 +35,7 @@ supportRouter.use(requireAuth);
 supportRouter.get(
   '/tickets',
   asyncHandler(async (req, res) => {
-    res.json({ data: await prisma.supportTicket.findMany({ where: { userId: currentUser(req).id }, orderBy: { updatedAt: 'desc' } }) });
+    res.json({ data: await prisma.supportTicket.findMany({ where: { userId: currentUser(req).id }, include: { order: { select: { id: true, status: true } } }, orderBy: { updatedAt: 'desc' } }) });
   })
 );
 
@@ -38,8 +44,11 @@ supportRouter.post(
   validate('body', ticketSchema),
   asyncHandler(async (req, res) => {
     const { id: userId } = currentUser(req);
+    const { subject, message: text, orderId } = req.body;
+    if (orderId !== null && !(await prisma.order.findFirst({ where: { id: orderId, userId }, select: { id: true } }))) throw notFound('Order not found.');
+
     const ticket = await prisma.supportTicket.create({
-      data: { userId, subject: req.body.subject, messages: { create: { authorId: userId, message: req.body.message } } },
+      data: { userId, subject, orderId, messages: { create: { authorId: userId, message: text } } },
       include: ticketInclude,
     });
     res.status(201).json({ data: ticket });

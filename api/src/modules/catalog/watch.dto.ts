@@ -2,7 +2,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { money } from '../../lib/serialize';
 
-export const watchInclude = { brand: true, category: true, colors: true } satisfies Prisma.WatchInclude;
+export const watchInclude = { brand: true, category: true, colors: { orderBy: { id: 'asc' } } } satisfies Prisma.WatchInclude;
 
 export type WatchRow = Prisma.WatchGetPayload<{ include: typeof watchInclude }>;
 
@@ -40,14 +40,18 @@ export const toWatchDto = (watch: WatchRow, ratings: Map<number, RatingSummary>)
     salePrice,
     discountPercent: salePrice === null ? null : Math.round((1 - salePrice / price) * 100),
     stock: watch.stock,
+    lowStockThreshold: watch.lowStockThreshold,
+    unitsSold: watch.unitsSold,
     images: watch.images,
     specifications: watch.specifications as Record<string, string>,
     hasBeltOption: watch.hasBeltOption,
     hasChainOption: watch.hasChainOption,
-    colors: watch.colors.map(({ id, name, hex, image }) => ({ id, name, hex, image })),
+    trackColorStock: watch.trackColorStock,
+    colors: watch.colors.map(({ id, name, hex, image, stock }) => ({ id, name, hex, image, stock: watch.trackColorStock ? stock : null })),
     status: watch.status,
     isFeatured: watch.isFeatured,
     isLimitedEdition: watch.isLimitedEdition,
+    isNew: watch.isNew,
     rating: ratings.get(watch.id) ?? NO_RATING,
     createdAt: watch.createdAt,
   };

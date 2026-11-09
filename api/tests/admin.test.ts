@@ -153,7 +153,7 @@ describe('admin people and moderation', () => {
     const id = created.body.data.id;
 
     const replied = await admin.agent.post(`/api/admin/tickets/${id}/messages`).send({ message: 'Yes, of course.' }).expect(201);
-    expect(replied.body.data).toMatchObject({ status: 'IN_PROGRESS', messages: [{ message: 'Can I change the strap?' }, { message: 'Yes, of course.', author: { role: 'ADMIN' } }] });
+    expect(replied.body.data).toMatchObject({ status: 'PENDING', messages: [{ message: 'Can I change the strap?' }, { message: 'Yes, of course.', author: { role: 'ADMIN' } }] });
     expect(await prisma.notification.count({ where: { userId: customer.user.id } })).toBe(1);
 
     await admin.agent.patch(`/api/admin/tickets/${id}`).send({ status: 'CLOSED' }).expect(200);

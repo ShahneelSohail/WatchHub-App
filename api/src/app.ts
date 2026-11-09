@@ -1,6 +1,7 @@
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
+import path from 'node:path';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { corsOrigins, env } from './config/env';
@@ -18,6 +19,8 @@ import { cartRouter } from './modules/shop/cart.routes';
 import { wishlistRouter } from './modules/shop/wishlist.routes';
 import { supportRouter } from './modules/support/support.routes';
 
+const WATCH_IMAGES_DIR = path.resolve(__dirname, '..', 'public', 'watches');
+
 export const createApp = () => {
   const app = express();
 
@@ -29,6 +32,7 @@ export const createApp = () => {
   if (env.NODE_ENV !== 'test') app.use(morgan('dev'));
 
   app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d' }));
+  app.use('/watches', express.static(WATCH_IMAGES_DIR, { maxAge: '7d' }));
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });

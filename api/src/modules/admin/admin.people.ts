@@ -7,7 +7,7 @@ import { prisma } from '../../lib/prisma';
 import { currentUser } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
 import { notify } from '../notifications/notification.service';
-import { ticketInclude } from '../support/support.routes';
+import { adminTicketInclude } from '../support/support.routes';
 import { idParams } from './admin.crud';
 
 const userQuery = pageQuery.extend({ q: z.string().trim().max(100).optional(), role: z.enum(['ADMIN', 'CUSTOMER']).optional() });
@@ -24,15 +24,26 @@ const reviewPatch = z.object({
     .optional(),
 });
 
-const ticketQuery = pageQuery.extend({ status: z.enum(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']).optional() });
-const ticketPatch = z.object({
-  status: z.enum(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']).optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+const ticketStatus = z.enum(['OPEN', 'PENDING', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']);
+const ticketQuery = pageQuery.extend({
+  status: z
+    .string()
+    .optional()
+    .transform(value => value?.split(','))
+    .pipe(z.array(ticketStatus).optional()),
+  q: z.string().trim().max(100).optional(),
 });
-const replySchema = z.object({ message: z.string().trim().min(2, 'Please write a reply').max(2000) });
+const ticketPatch = z.object({
+  status: ticketStatus.optional(),
+  priority: z.enum(['LOW', 'NORMAL', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
+});
+const replySchema = z.object({
+  message: z.string().trim().min(2, 'Please write a reply').max(2000),
+  kind: z.enum(['ADMIN', 'INTERNAL']).default('ADMIN'),
+});
 
 const loadTicket = async (id: number) => {
-  const ticket = await prisma.supportTicket.findUnique({ where: { id }, include: { ...ticketInclude, user: { select: { id: true, name: true, email: true } } } });
+  const ticket = await prisma.supportTicket.findUnique({ where: { id }, include: { ...adminTicketInclude, user: { select: { id: true, name: true, email: true } } } });
   if (!ticket) throw notFound('Ticket not found.');
   return ticket;
 };
@@ -52,7 +63,17 @@ peopleAdminRouter.get(
       prisma.user.count({ where }),
       prisma.user.findMany({
         where,
-        select: { id: true, email: true, name: true, phone: true, role: true, isBlocked: true, createdAt: true, _count: { select: { orders: true } } },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          role: true,
+          isBlocked: true,
+          createdAt: true,
+          _count: { select: { orders: true } },
+          addresses: { where: { isDefault: true }, select: { city: true, country: true }, take: 1 },
+        },
         orderBy: { createdAt: 'desc' },
         ...paginate({ page, pageSize }),
       }),
@@ -60,11 +81,16 @@ peopleAdminRouter.get(
     const spent = await prisma.order.groupBy({
       by: ['userId'],
       where: { userId: { in: users.map(user => user.id) }, status: { not: 'CANCELLED' } },
-      _sum: { total: true },
+      _sum: { total: true, refundedAmount: true },
     });
-    const spentByUser = new Map(spent.map(row => [row.userId, Number(row._sum.total ?? 0)]));
+    const spentByUser = new Map(spent.map(row => [row.userId, Number(row._sum.total ?? 0) - Number(row._sum.refundedAmount ?? 0)]));
     res.json({
-      data: users.map(({ _count, ...user }) => ({ ...user, orderCount: _count.orders, totalSpent: spentByUser.get(user.id) ?? 0 })),
+      data: users.map(({ _count, addresses, ...user }) => ({
+        ...user,
+        location: addresses[0] ? `${addresses[0].city}, ${addresses[0].country}` : null,
+        orderCount: _count.orders,
+        totalSpent: spentByUser.get(user.id) ?? 0,
+      })),
       meta: pageMeta(page, pageSize, total),
     });
   })
@@ -126,17 +152,30 @@ peopleAdminRouter.get(
   '/tickets',
   validate('query', ticketQuery),
   asyncHandler(async (req, res) => {
-    const { page, pageSize, status } = req.query as unknown as z.infer<typeof ticketQuery>;
-    const [total, tickets] = await Promise.all([
-      prisma.supportTicket.count({ where: { status } }),
+    const { page, pageSize, status, q } = req.query as unknown as z.infer<typeof ticketQuery>;
+    const where: Prisma.SupportTicketWhereInput = {
+      status: status ? { in: status } : undefined,
+      OR: q
+        ? [...(/^#?\d+$/.test(q) ? [{ id: Number(q.replace('#', '')) }] : []), { subject: { contains: q, mode: 'insensitive' } }, { user: { name: { contains: q, mode: 'insensitive' } } }]
+        : undefined,
+    };
+    const [total, tickets, statusGroups] = await Promise.all([
+      prisma.supportTicket.count({ where }),
       prisma.supportTicket.findMany({
-        where: { status },
-        include: { user: { select: { id: true, name: true, email: true } } },
+        where,
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { message: true, kind: true, createdAt: true } },
+        },
         orderBy: { updatedAt: 'desc' },
         ...paginate({ page, pageSize }),
       }),
+      prisma.supportTicket.groupBy({ by: ['status'], where: { ...where, status: undefined }, _count: true }),
     ]);
-    res.json({ data: tickets, meta: pageMeta(page, pageSize, total) });
+    res.json({
+      data: tickets.map(({ messages, ...ticket }) => ({ ...ticket, lastMessage: messages[0] ?? null })),
+      meta: { ...pageMeta(page, pageSize, total), counts: Object.fromEntries(statusGroups.map(group => [group.status, group._count])) },
+    });
   })
 );
 
@@ -166,12 +205,14 @@ peopleAdminRouter.post(
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
     const ticket = await loadTicket(id);
+    const { message, kind } = req.body as z.infer<typeof replySchema>;
+    const isReply = kind === 'ADMIN';
     await prisma.$transaction(async tx => {
       await tx.supportTicket.update({
         where: { id },
-        data: { status: ticket.status === 'OPEN' ? 'IN_PROGRESS' : ticket.status, messages: { create: { authorId: currentUser(req).id, message: req.body.message } } },
+        data: { status: isReply && ticket.status === 'OPEN' ? 'PENDING' : ticket.status, messages: { create: { authorId: currentUser(req).id, message, kind } } },
       });
-      await notify(ticket.userId, `New reply on "${ticket.subject}"`, 'Our team has replied to your support ticket.', `/support/${id}`, tx);
+      if (isReply) await notify(ticket.userId, `New reply on "${ticket.subject}"`, 'Our team has replied to your support ticket.', `/support/${id}`, tx);
     });
     res.status(201).json({ data: await loadTicket(id) });
   })

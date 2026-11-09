@@ -5,6 +5,7 @@ import { asyncHandler, badRequest, notFound } from '../../lib/http';
 import { prisma } from '../../lib/prisma';
 import { currentUser, requireAuth } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
+import { availableStock } from '../catalog/stock';
 import { effectivePrice, ratingSummaries, toWatchDto, watchInclude } from '../catalog/watch.dto';
 
 const MAX_QUANTITY = 10;
@@ -28,24 +29,30 @@ const cartInclude = { watch: { include: watchInclude } } as const;
 export const loadCart = async (userId: number) => {
   const items = await prisma.cartItem.findMany({ where: { userId }, include: cartInclude, orderBy: { createdAt: 'asc' } });
   const ratings = await ratingSummaries(items.map(item => item.watchId));
-  return items.map(({ watch, ...item }) => ({
-    id: item.id,
-    quantity: item.quantity,
-    strapType: item.strapType,
-    strapColor: item.strapColor,
-    productColor: item.productColor,
-    lineTotal: Math.round(effectivePrice(watch) * item.quantity * 100) / 100,
-    watch: toWatchDto(watch, ratings),
-  }));
+  return items.map(({ watch, ...item }) => {
+    const available = watch.status === 'PUBLISHED' ? availableStock(watch, item.productColor) : 0;
+    return {
+      id: item.id,
+      available,
+      soldOut: available === 0,
+      quantity: item.quantity,
+      strapType: item.strapType,
+      strapColor: item.strapColor,
+      productColor: item.productColor,
+      lineTotal: Math.round(effectivePrice(watch) * item.quantity * 100) / 100,
+      watch: toWatchDto(watch, ratings),
+    };
+  });
 };
 
 const assertOptions = (
-  watch: { status: string; stock: number; hasBeltOption: boolean; hasChainOption: boolean; colors: { name: string }[] },
+  watch: { status: string; stock: number; trackColorStock: boolean; hasBeltOption: boolean; hasChainOption: boolean; colors: { name: string; stock: number }[] },
   options: { strapType: StrapType | null; productColor: string | null },
   wanted: number
 ) => {
   if (watch.status !== 'PUBLISHED') throw notFound('Watch not found.');
-  if (wanted > watch.stock) throw badRequest(watch.stock === 0 ? 'This watch is out of stock.' : `Only ${watch.stock} left in stock.`);
+  const available = availableStock(watch, options.productColor);
+  if (wanted > available) throw badRequest(available === 0 ? 'This watch is out of stock.' : `Only ${available} left in stock.`, available === 0 ? 'OUT_OF_STOCK' : 'INSUFFICIENT_STOCK', { available });
   if (options.strapType === 'BELT' && !watch.hasBeltOption) throw badRequest('This watch is not available with a belt strap.');
   if (options.strapType === 'CHAIN' && !watch.hasChainOption) throw badRequest('This watch is not available with a chain strap.');
   if (options.productColor && !watch.colors.some(color => color.name === options.productColor)) throw badRequest('That colour is not available for this watch.');

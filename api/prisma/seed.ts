@@ -27,6 +27,9 @@ interface SeedWatch {
   hasChainOption?: boolean;
   isFeatured?: boolean;
   isLimitedEdition?: boolean;
+  isNew?: boolean;
+  draft?: boolean;
+  imageSlug?: string;
 }
 
 const BRANDS = [
@@ -46,7 +49,7 @@ const CATEGORIES = [
 
 const WATCHES: SeedWatch[] = [
   {
-    slug: 'orbis-celeste', name: 'Orbis Celeste', brand: 'Aurelle', category: 'Luxury', price: 3450, salePrice: 2990, stock: 6, isFeatured: true, isLimitedEdition: true, hasBeltOption: true,
+    slug: 'orbis-celeste', name: 'Orbis Celeste', brand: 'Aurelle', category: 'Luxury', price: 3450, salePrice: 2990, stock: 5, isFeatured: true, isLimitedEdition: true, hasBeltOption: true,
     description: 'A moonphase-inspired dress watch with a domed sapphire crystal and a hand-stitched alligator strap. Limited to 500 pieces per colour.',
     specifications: { Movement: 'Automatic', Case: '40 mm stainless steel', Crystal: 'Sapphire', 'Water resistance': '50 m', 'Power reserve': '42 hours' },
     colors: [{ name: 'Chocolate Brown', hex: '#4a2f22' }, { name: 'Forest Green', hex: '#1f4d3a' }, { name: 'Pearl White', hex: '#f1ede4' }],
@@ -64,7 +67,7 @@ const WATCHES: SeedWatch[] = [
     colors: [{ name: 'Sapphire Blue', hex: '#1d4ed8' }, { name: 'Silver', hex: '#c0c4cc' }, { name: 'Champagne Gold', hex: '#d4af37' }],
   },
   {
-    slug: 'pulse-square', name: 'Pulse Square', brand: 'Pulse', category: 'Smartwatch', price: 129, stock: 40, hasBeltOption: true,
+    slug: 'pulse-square', name: 'Pulse Square', brand: 'Pulse', category: 'Smartwatch', price: 129, stock: 40, hasBeltOption: true, isNew: true,
     description: 'A bright square display with heart rate, SpO2, sleep tracking and 100 sport modes. Up to 7 days of battery.',
     specifications: { Display: '1.69" AMOLED', Battery: '7 days', Sensors: 'Heart rate, SpO2', 'Water resistance': '5 ATM', Connectivity: 'Bluetooth 5.3' },
     colors: [{ name: 'Lime', hex: '#a3e635' }, { name: 'White', hex: '#f5f5f5' }, { name: 'Navy', hex: '#1e3a8a' }],
@@ -106,7 +109,7 @@ const WATCHES: SeedWatch[] = [
     colors: [{ name: 'Yellow Gold', hex: '#d4af37' }, { name: 'Rose Gold', hex: '#d99a85' }, { name: 'Silver', hex: '#c0c4cc' }],
   },
   {
-    slug: 'petite-mesh', name: 'Petite Mesh', brand: 'Meridian', category: 'Women', price: 340, stock: 20, hasChainOption: true,
+    slug: 'petite-mesh', name: 'Petite Mesh', brand: 'Meridian', category: 'Women', price: 340, stock: 0, hasChainOption: true,
     description: 'A 22 mm case on a milanese mesh strap that adjusts to any wrist without tools.',
     specifications: { Movement: 'Japanese quartz', Case: '22 mm steel', Crystal: 'Mineral', 'Water resistance': '30 m', Strap: 'Milanese mesh' },
     colors: [{ name: 'Rose Gold', hex: '#d99a85' }, { name: 'Emerald Gold', hex: '#b7a24a' }, { name: 'Midnight Silver', hex: '#c0c4cc' }],
@@ -118,12 +121,21 @@ const WATCHES: SeedWatch[] = [
     colors: [{ name: 'Silver', hex: '#c0c4cc' }, { name: 'Rose', hex: '#d99a85' }, { name: 'Gold', hex: '#d4af37' }],
   },
   {
-    slug: 'aurora-pave', name: 'Aurora Pavé', brand: 'Kairos', category: 'Women', price: 910, salePrice: 810, stock: 8,
+    slug: 'aurora-pave', name: 'Aurora Pavé', brand: 'Kairos', category: 'Women', price: 910, salePrice: 810, stock: 8, isNew: true,
     description: 'A pavé crystal bezel and a glacier-blue dial on a slim steel bracelet.',
     specifications: { Movement: 'Swiss quartz', Case: '30 mm steel', Crystal: 'Sapphire', 'Water resistance': '50 m', Bezel: 'Pavé crystal' },
     colors: [{ name: 'Rose Gold', hex: '#d99a85' }, { name: 'Champagne', hex: '#e8d5b5' }, { name: 'Silver', hex: '#c0c4cc' }],
   },
 ];
+
+const DRAFT_WATCH: SeedWatch = {
+  slug: 'aurora-nuit', name: 'Aurora Nuit', brand: 'Kairos', category: 'Women', price: 960, stock: 6, draft: true, imageSlug: 'aurora-pave',
+  description: 'A midnight-blue pave edition of the Aurora, being prepared for launch.',
+  specifications: { Movement: 'Swiss quartz', Case: '30 mm steel', Crystal: 'Sapphire', 'Water resistance': '50 m', Bezel: 'Pave crystal' },
+  colors: [{ name: 'Midnight', hex: '#1b2a4a' }, { name: 'Silver', hex: '#c0c4cc' }, { name: 'Rose Gold', hex: '#d99a85' }],
+};
+
+const ALL_WATCHES = [...WATCHES, DRAFT_WATCH];
 
 const USERS = [
   { email: 'admin@watchhub.test', name: 'WatchHub Admin', role: 'ADMIN' as const },
@@ -139,15 +151,18 @@ const ADDRESSES = [
 ];
 
 const COUPONS = [
-  { code: 'WELCOME10', type: 'PERCENTAGE' as const, value: 10, minAmount: 100, usageLimit: 500, limitPerUser: 1 },
-  { code: 'SAVE50', type: 'FIXED' as const, value: 50, minAmount: 500, startsAt: new Date(Date.now() - 30 * DAY), expiresAt: new Date(Date.now() + 90 * DAY) },
-  { code: 'SUMMER20', type: 'PERCENTAGE' as const, value: 20, expiresAt: new Date(Date.now() - 10 * DAY) },
+  { code: 'WELCOME10', type: 'PERCENTAGE' as const, value: 10, minAmount: 100, usageLimit: 500, usageCount: 128, limitPerUser: 1, expiresAt: new Date(Date.now() + 120 * DAY) },
+  { code: 'SAVE50', type: 'FIXED' as const, value: 50, minAmount: 500, usageLimit: 200, usageCount: 37, startsAt: new Date(Date.now() - 30 * DAY), expiresAt: new Date(Date.now() + 90 * DAY) },
+  { code: 'AUTUMN15', type: 'PERCENTAGE' as const, value: 15, minAmount: 300, usageLimit: 300, usageCount: 41, expiresAt: new Date(Date.now() + 40 * DAY) },
+  { code: 'VIP100', type: 'FIXED' as const, value: 100, minAmount: 1000, usageLimit: 50, usageCount: 6, isActive: false },
+  { code: 'SUMMER20', type: 'PERCENTAGE' as const, value: 20, usageLimit: 400, usageCount: 400, expiresAt: new Date(Date.now() - 10 * DAY) },
 ];
 
 const BANNERS = [
-  { imageUrl: '/watches/kairos-chronos-1.webp', title: 'Precision, perfected', subtitle: 'The Kairos Chronos: rose gold, integrated, unmistakable.', link: '/watches/kairos-chronos' },
-  { imageUrl: '/watches/regalia-day-date-1.webp', title: 'Timeless, on sale', subtitle: 'The Regalia Day-Date, now $290 below its list price.', link: '/watches/regalia-day-date' },
-  { imageUrl: '/watches/pulse-orbit-2.webp', title: 'Smarter every day', subtitle: 'GPS, calls and five days of battery with the Pulse Orbit.', link: '/watches/pulse-orbit' },
+  { imageUrl: '/watches/kairos-chronos-1.webp', eyebrow: 'No 01 · Signature', title: 'Precision, perfected', subtitle: 'The Kairos Chronos: rose gold, integrated, unmistakable.', link: '/watches/kairos-chronos', slug: 'kairos-chronos', isActive: true },
+  { imageUrl: '/watches/regalia-day-date-1.webp', eyebrow: 'No 02 · Offer', title: 'Timeless, on sale', subtitle: 'The Regalia Day-Date, now $290 below its list price.', link: '/watches/regalia-day-date', slug: 'regalia-day-date', isActive: true },
+  { imageUrl: '/watches/pulse-orbit-2.webp', eyebrow: 'No 03 · Smart', title: 'Smarter every day', subtitle: 'GPS, calls and five days of battery with the Pulse Orbit.', link: '/watches/pulse-orbit', slug: 'pulse-orbit', isActive: true },
+  { imageUrl: '/watches/aurora-pave-1.webp', eyebrow: 'No 04 · Coming soon', title: 'Aurora after dark', subtitle: 'A midnight pave edition, arriving soon.', link: '/watches/aurora-pave', slug: 'aurora-pave', isActive: false },
 ];
 
 const FAQS = [
@@ -157,7 +172,11 @@ const FAQS = [
   { category: 'Payments', question: 'Is my card information safe?', answer: 'Card details are entered on Stripe-hosted checkout and never touch our servers.' },
   { category: 'Products', question: 'Are the watches covered by a warranty?', answer: 'Every watch includes a two-year international warranty against manufacturing defects.' },
   { category: 'Products', question: 'Can I change the strap?', answer: 'Watches marked with a belt or chain option let you choose the strap at checkout. Extra straps are available from support.' },
+  { category: 'Returns', question: 'What is your returns policy?', answer: 'Return any unworn watch within 30 days. We collect it for free and refund the original payment method.' },
+  { category: 'Returns', question: 'How long do refunds take?', answer: 'Card refunds reach your bank in 5 to 10 working days. Cash-on-delivery refunds are paid by bank transfer.' },
 ];
+
+const ADMIN_NAME = 'WatchHub Admin';
 
 const HOURS_AGO = (hours: number) => new Date(Date.now() - hours * 60 * 60 * 1000);
 
@@ -168,16 +187,22 @@ interface SeedOrder {
   paymentMethod: PaymentMethod;
   daysAgo: number;
   tracking?: string;
+  paid?: boolean;
+  refunds?: { amount: number; reason: string }[];
+  notes?: string[];
 }
 
 const ORDERS: SeedOrder[] = [
-  { user: 'maya@watchhub.test', watches: [{ slug: 'regalia-day-date', quantity: 1, color: 0 }], status: 'DELIVERED', paymentMethod: 'STRIPE', daysAgo: 21, tracking: 'WH-100231' },
+  { user: 'maya@watchhub.test', watches: [{ slug: 'regalia-day-date', quantity: 1, color: 0 }], status: 'DELIVERED', paymentMethod: 'STRIPE', daysAgo: 21, tracking: 'WH-100231', refunds: [{ amount: 300, reason: 'Strap exchange' }], notes: ['Customer asked for a longer strap, partial refund agreed.'] },
   { user: 'maya@watchhub.test', watches: [{ slug: 'pulse-orbit', quantity: 2, color: 1 }], status: 'SHIPPED', paymentMethod: 'STRIPE', daysAgo: 3, tracking: 'WH-100302' },
   { user: 'omar@watchhub.test', watches: [{ slug: 'lunar-chrono', quantity: 1, color: 0, strap: 'BELT' }], status: 'DELIVERED', paymentMethod: 'COD', daysAgo: 14, tracking: 'WH-100244' },
   { user: 'omar@watchhub.test', watches: [{ slug: 'tidal-force', quantity: 1, color: 1 }, { slug: 'pulse-square', quantity: 1, color: 0 }], status: 'CONFIRMED', paymentMethod: 'STRIPE', daysAgo: 1 },
   { user: 'lena@watchhub.test', watches: [{ slug: 'solitaire', quantity: 1, color: 1, strap: 'CHAIN' }], status: 'DELIVERED', paymentMethod: 'STRIPE', daysAgo: 30, tracking: 'WH-100188' },
   { user: 'lena@watchhub.test', watches: [{ slug: 'orbis-celeste', quantity: 1, color: 2, strap: 'BELT' }], status: 'PENDING', paymentMethod: 'COD', daysAgo: 0 },
   { user: 'maya@watchhub.test', watches: [{ slug: 'pulse-noir', quantity: 1, color: 2 }], status: 'CANCELLED', paymentMethod: 'COD', daysAgo: 8 },
+  { user: 'omar@watchhub.test', watches: [{ slug: 'meridian-jubilee', quantity: 1, color: 1 }], status: 'PENDING_PAYMENT', paymentMethod: 'STRIPE', daysAgo: 1 },
+  { user: 'lena@watchhub.test', watches: [{ slug: 'pulse-square', quantity: 1, color: 2 }], status: 'CANCELLED', paymentMethod: 'STRIPE', daysAgo: 12, paid: true, refunds: [{ amount: 129, reason: 'Order cancelled' }] },
+  { user: 'maya@watchhub.test', watches: [{ slug: 'kairos-chronos', quantity: 1, color: 0 }], status: 'CONFIRMED', paymentMethod: 'STRIPE', daysAgo: 2, notes: ['Gift order, include the presentation box.'] },
 ];
 
 const REVIEWS = [
@@ -206,17 +231,21 @@ const main = async () => {
 
   const watches = new Map(
     await Promise.all(
-      WATCHES.map(async ({ brand, category, colors, slug, ...watch }, index) => {
-        const images = colors.map((_, index) => `/watches/${slug}-${index + 1}.webp`);
+      ALL_WATCHES.map(async ({ brand, category, colors, slug, draft, imageSlug, stock, ...watch }, index) => {
+        const images = colors.map((_, colorIndex) => `/watches/${imageSlug ?? slug}-${colorIndex + 1}.webp`);
+        const colorStocks = colors.map((_, colorIndex) => Math.floor(stock / colors.length) + (colorIndex === 0 ? stock % colors.length : 0));
         const created = await prisma.watch.create({
           data: {
             ...watch,
             slug,
+            stock,
+            trackColorStock: true,
+            status: draft ? 'DRAFT' : 'PUBLISHED',
             sku: `WH-${String(index + 1).padStart(3, '0')}`,
             brandId: brands.get(brand)!.id,
             categoryId: categories.get(category)!.id,
             images,
-            colors: { create: colors.map((color, index) => ({ ...color, image: images[index] })) },
+            colors: { create: colors.map((color, colorIndex) => ({ ...color, image: images[colorIndex], stock: colorStocks[colorIndex]! })) },
           },
           include: { colors: { orderBy: { id: 'asc' } } },
         });
@@ -226,9 +255,10 @@ const main = async () => {
   );
 
   await prisma.coupon.createMany({ data: COUPONS });
-  await prisma.banner.createMany({ data: BANNERS.map((banner, index) => ({ ...banner, sortOrder: index })) });
+  await prisma.banner.createMany({ data: BANNERS.map(({ slug, ...banner }, index) => ({ ...banner, watchId: watches.get(slug)!.id, sortOrder: index })) });
   await prisma.faq.createMany({ data: FAQS.map((faq, index) => ({ ...faq, sortOrder: index })) });
 
+  const orderIds: number[] = [];
   for (const seed of ORDERS) {
     const user = users.get(seed.user)!;
     const { recipient, addressLine, city, state, zip, country, phone } = addresses.get(seed.user)!;
@@ -239,13 +269,17 @@ const main = async () => {
     });
     const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
     const createdAt = HOURS_AGO(seed.daysAgo * 24 + 2);
-    const paid = seed.status !== 'CANCELLED' && seed.status !== 'PENDING' && (seed.paymentMethod === 'STRIPE' || seed.status === 'DELIVERED');
-    await prisma.order.create({
+    const paid = seed.paid ?? (seed.status !== 'CANCELLED' && seed.status !== 'PENDING' && seed.status !== 'PENDING_PAYMENT' && (seed.paymentMethod === 'STRIPE' || seed.status === 'DELIVERED'));
+    const refunds = seed.refunds ?? [];
+    const refundedAmount = refunds.reduce((sum, refund) => sum + refund.amount, 0);
+    const initialStatus: OrderStatus = seed.paymentMethod === 'STRIPE' ? 'PENDING_PAYMENT' : 'PENDING';
+    const order = await prisma.order.create({
       data: {
         userId: user.id,
         status: seed.status,
         paymentMethod: seed.paymentMethod,
-        paymentStatus: paid ? 'PAID' : 'UNPAID',
+        paymentStatus: refundedAmount === 0 ? (paid ? 'PAID' : 'UNPAID') : refundedAmount >= subtotal ? 'REFUNDED' : 'PARTLY_REFUNDED',
+        refundedAmount,
         shippingMethod: 'STANDARD',
         subtotal,
         shippingCost: 0,
@@ -256,9 +290,12 @@ const main = async () => {
         courierName: seed.tracking ? 'DHL Express' : undefined,
         createdAt,
         items: { create: lines.map(({ watch, ...line }) => ({ ...line, watchId: watch.id, name: watch.name })) },
-        events: { create: [{ status: 'PENDING' as const, createdAt }, ...(seed.status === 'PENDING' ? [] : [{ status: seed.status, createdAt: HOURS_AGO(seed.daysAgo * 24) }])] },
+        events: { create: [{ status: initialStatus, createdAt }, ...(seed.status === initialStatus ? [] : [{ status: seed.status, createdAt: HOURS_AGO(seed.daysAgo * 24), actor: ADMIN_NAME }])] },
+        refunds: { create: refunds.map(refund => ({ ...refund, method: seed.paymentMethod, createdAt: HOURS_AGO(seed.daysAgo * 12) })) },
+        notes: { create: (seed.notes ?? []).map(body => ({ body, authorId: users.get('admin@watchhub.test')!.id })) },
       },
     });
+    orderIds.push(order.id);
     if (seed.status !== 'CANCELLED') {
       await Promise.all(lines.map(({ watch, quantity }) => prisma.watch.update({ where: { id: watch.id }, data: { unitsSold: { increment: quantity } } })));
     }
@@ -272,15 +309,58 @@ const main = async () => {
     ],
   });
   await prisma.notification.create({ data: { userId: users.get('maya@watchhub.test')!.id, title: 'Order #2 update', body: 'Your order is on its way.', link: '/orders/2' } });
-  await prisma.supportTicket.create({
-    data: {
-      userId: users.get('omar@watchhub.test')!.id,
-      subject: 'Can I swap the strap on my Lunar Chrono?',
-      messages: { create: { authorId: users.get('omar@watchhub.test')!.id, message: 'I would love a black leather strap instead of the navy one. Is that possible after delivery?' } },
-    },
-  });
 
-  console.log(`Seeded ${WATCHES.length} watches, ${USERS.length} users and ${ORDERS.length} orders.`);
+  const admin = users.get('admin@watchhub.test')!;
+  const omar = users.get('omar@watchhub.test')!;
+  const maya = users.get('maya@watchhub.test')!;
+  const lena = users.get('lena@watchhub.test')!;
+  const tickets = [
+    {
+      userId: omar.id,
+      orderId: orderIds[2]!,
+      subject: 'Can I swap the strap on my Lunar Chrono?',
+      status: 'OPEN' as const,
+      priority: 'NORMAL' as const,
+      messages: [{ authorId: omar.id, kind: 'CUSTOMER' as const, message: 'I would love a black leather strap instead of the navy one. Is that possible after delivery?' }],
+    },
+    {
+      userId: maya.id,
+      orderId: orderIds[1]!,
+      subject: 'Tracking number not updating',
+      status: 'PENDING' as const,
+      priority: 'HIGH' as const,
+      messages: [
+        { authorId: maya.id, kind: 'CUSTOMER' as const, message: 'My tracking has shown label created for two days. Is my order on its way?' },
+        { authorId: admin.id, kind: 'INTERNAL' as const, message: 'Checked with DHL: the parcel was collected this morning, scan is delayed.' },
+        { authorId: admin.id, kind: 'ADMIN' as const, message: 'Thanks for your patience. DHL collected the parcel this morning and tracking should update within 24 hours.' },
+      ],
+    },
+    {
+      userId: lena.id,
+      subject: 'Strap sizing for Solitaire',
+      status: 'RESOLVED' as const,
+      priority: 'LOW' as const,
+      messages: [
+        { authorId: lena.id, kind: 'CUSTOMER' as const, message: 'Can you send the chain bracelet with one link removed?' },
+        { authorId: admin.id, kind: 'ADMIN' as const, message: 'Done, we have packed a link remover tool and the spare links with your order.' },
+        { authorId: lena.id, kind: 'CUSTOMER' as const, message: 'Perfect, thank you.' },
+      ],
+    },
+  ];
+  for (const { messages, ...ticket } of tickets) {
+    await prisma.supportTicket.create({ data: { ...ticket, messages: { create: messages } } });
+  }
+
+  await prisma.stockAdjustment.createMany({
+    data: [
+      { watchId: watches.get('petite-mesh')!.id, variant: 'Rose Gold', delta: -4, newStock: 0, reason: 'Stock count', actor: ADMIN_NAME },
+      { watchId: watches.get('cascade-bangle')!.id, variant: 'Silver', delta: 2, newStock: 3, reason: 'Restock delivery', actor: ADMIN_NAME },
+    ],
+  });
+  await prisma.stockSubscription.create({ data: { watchId: watches.get('petite-mesh')!.id, email: 'maya@watchhub.test', userId: maya.id } });
+  await prisma.newsletterSubscriber.createMany({ data: [{ email: 'maya@watchhub.test' }, { email: 'reader@example.com' }] });
+
+  console.log(`Seeded ${ALL_WATCHES.length} watches, ${USERS.length} users and ${ORDERS.length} orders.`);
   console.log('Sign in with any @watchhub.test address, for example admin@watchhub.test. The password is set in prisma/seed.ts (override with SEED_PASSWORD).');
 };
 

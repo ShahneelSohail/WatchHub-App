@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import { Router, type Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { env } from '../../config/env';
@@ -7,11 +8,12 @@ import { prisma } from '../../lib/prisma';
 import { AUTH_COOKIE, cookieOptions, signToken } from '../../lib/tokens';
 import { currentUser, requireAuth } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
-import { changePasswordSchema, loginSchema, profileSchema, registerSchema } from './auth.schemas';
+import { changePasswordSchema, forgotPasswordSchema, loginSchema, profileSchema, registerSchema, resetPasswordSchema } from './auth.schemas';
 
 const BCRYPT_ROUNDS = 10;
 const AUTH_WINDOW_MS = 15 * 60 * 1000;
 const AUTH_MAX_ATTEMPTS = 30;
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 export const publicUser = { id: true, email: true, name: true, phone: true, role: true, createdAt: true } as const;
 
@@ -23,9 +25,13 @@ const authLimiter = rateLimit({
   message: { error: { message: 'Too many attempts. Please try again later.' } },
 });
 
-const startSession = (res: Response, userId: number) => {
-  res.cookie(AUTH_COOKIE, signToken(userId), cookieOptions);
+const startSession = (res: Response, userId: number): string => {
+  const token = signToken(userId);
+  res.cookie(AUTH_COOKIE, token, cookieOptions);
+  return token;
 };
+
+const hashToken = (token: string): string => crypto.createHash('sha256').update(token).digest('hex');
 
 export const authRouter = Router();
 
@@ -41,8 +47,7 @@ authRouter.post(
       data: { name, email, passwordHash: await bcrypt.hash(password, BCRYPT_ROUNDS) },
       select: publicUser,
     });
-    startSession(res, user.id);
-    res.status(201).json({ data: user });
+    res.status(201).json({ data: user, token: startSession(res, user.id) });
   })
 );
 
@@ -57,8 +62,8 @@ authRouter.post(
     if (!user || !valid) throw badRequest('Invalid email or password.');
     if (user.isBlocked) throw forbidden('Your account has been blocked. Please contact support.');
 
-    startSession(res, user.id);
-    res.json({ data: { id: user.id, email: user.email, name: user.name, phone: user.phone, role: user.role, createdAt: user.createdAt } });
+    const token = startSession(res, user.id);
+    res.json({ data: { id: user.id, email: user.email, name: user.name, phone: user.phone, role: user.role, createdAt: user.createdAt }, token });
   })
 );
 
@@ -103,6 +108,38 @@ authRouter.post(
     if (!(await bcrypt.compare(currentPassword, user.passwordHash))) throw badRequest('Current password is incorrect.');
 
     await prisma.user.update({ where: { id }, data: { passwordHash: await bcrypt.hash(newPassword, BCRYPT_ROUNDS) } });
+    res.status(204).end();
+  })
+);
+
+authRouter.post(
+  '/forgot-password',
+  authLimiter,
+  validate('body', forgotPasswordSchema),
+  asyncHandler(async (req, res) => {
+    const user = await prisma.user.findUnique({ where: { email: req.body.email }, select: { id: true, isBlocked: true } });
+    const message = 'If that email is registered, a reset link is on its way.';
+    if (!user || user.isBlocked) return res.json({ data: { message } });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    await prisma.passwordReset.create({ data: { userId: user.id, tokenHash: hashToken(token), expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS) } });
+    res.json({ data: env.NODE_ENV === 'development' ? { message, resetUrl: `${env.WEB_URL}/reset-password?token=${token}`, token } : { message } });
+  })
+);
+
+authRouter.post(
+  '/reset-password',
+  authLimiter,
+  validate('body', resetPasswordSchema),
+  asyncHandler(async (req, res) => {
+    const reset = await prisma.passwordReset.findUnique({ where: { tokenHash: hashToken(req.body.token) } });
+    if (!reset || reset.usedAt || reset.expiresAt < new Date()) throw badRequest('This reset link is invalid or has expired.', 'RESET_TOKEN_INVALID');
+
+    const now = new Date();
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: reset.userId }, data: { passwordHash: await bcrypt.hash(req.body.password, BCRYPT_ROUNDS) } }),
+      prisma.passwordReset.updateMany({ where: { userId: reset.userId, usedAt: null }, data: { usedAt: now } }),
+    ]);
     res.status(204).end();
   })
 );

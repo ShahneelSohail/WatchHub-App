@@ -10,7 +10,7 @@ export const validate =
     const result = schema.safeParse(req[source]);
     if (!result.success) {
       const details = result.error.issues.map(issue => ({ field: issue.path.join('.'), message: issue.message }));
-      return next(badRequest(details[0]?.message ?? 'Invalid request.', details));
+      return next(badRequest(details[0]?.message ?? 'Invalid request.', 'VALIDATION_ERROR', details));
     }
     Object.defineProperty(req, source, { value: result.data, writable: true, configurable: true });
     next();

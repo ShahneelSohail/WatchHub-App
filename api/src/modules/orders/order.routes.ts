@@ -7,18 +7,25 @@ import { prisma } from '../../lib/prisma';
 import { getStripe } from '../../lib/stripe';
 import { currentUser, requireAuth } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
-import { cancelOrder, createCheckoutSession, markPaid, orderInclude, placeOrder, quoteCart, toOrderDto } from './order.service';
-import { SHIPPING_COSTS } from './pricing';
+import { CANCELLABLE, cancelOrder, checkStock, codAvailability, createCheckoutSession, isAllowedReturnUrl, markPaid, orderInclude, placeOrder, quoteCart, switchToCod, toOrderDto } from './order.service';
+import { COD_LIMIT, SHIPPING_COSTS } from './pricing';
 
 const idParams = z.object({ id: z.coerce.number().int().positive() });
 
 const shippingMethod = z.enum(['STANDARD', 'EXPRESS']);
 const couponCode = z.string().trim().max(40).optional().transform(value => value || undefined);
 
-const quoteSchema = z.object({ shippingMethod, couponCode });
+const returnOptions = z.object({
+  returnUrl: z.string().max(300).refine(isAllowedReturnUrl, 'That return URL is not allowed').optional(),
+  platform: z.enum(['web', 'mobile']).optional(),
+});
+
+const quoteSchema = z.object({ shippingMethod: shippingMethod.default('STANDARD'), couponCode });
 const checkoutSchema = quoteSchema.extend({
+  shippingMethod,
   addressId: z.number().int().positive('Choose a delivery address'),
   paymentMethod: z.enum(['STRIPE', 'COD']),
+  ...returnOptions.shape,
 });
 
 const findOwnOrder = async (id: number, userId: number) => {
@@ -31,7 +38,7 @@ export const checkoutRouter = Router();
 checkoutRouter.use(requireAuth);
 
 checkoutRouter.get('/options', (_req, res) => {
-  res.json({ data: { cardPayments: Boolean(env.STRIPE_SECRET_KEY), shippingCosts: SHIPPING_COSTS } });
+  res.json({ data: { cardPayments: Boolean(env.STRIPE_SECRET_KEY), shippingCosts: SHIPPING_COSTS, codLimit: COD_LIMIT } });
 });
 
 checkoutRouter.post(
@@ -39,7 +46,14 @@ checkoutRouter.post(
   validate('body', quoteSchema),
   asyncHandler(async (req, res) => {
     const { totals, coupon } = await quoteCart(currentUser(req).id, req.body.shippingMethod, req.body.couponCode);
-    res.json({ data: { ...totals, couponCode: coupon?.code ?? null } });
+    res.json({ data: { ...totals, couponCode: coupon?.code ?? null, ...codAvailability(totals.total) } });
+  })
+);
+
+checkoutRouter.get(
+  '/stock',
+  asyncHandler(async (req, res) => {
+    res.json({ data: await checkStock(currentUser(req).id) });
   })
 );
 
@@ -50,8 +64,9 @@ checkoutRouter.post(
     const user = currentUser(req);
     if (req.body.paymentMethod === 'STRIPE') getStripe();
 
-    const order = await placeOrder({ userId: user.id, ...req.body });
-    const checkoutUrl = order.paymentMethod === 'STRIPE' ? await createCheckoutSession(order, user.email) : null;
+    const { returnUrl, platform, ...input } = req.body as z.infer<typeof checkoutSchema>;
+    const order = await placeOrder({ userId: user.id, ...input });
+    const checkoutUrl = order.paymentMethod === 'STRIPE' ? await createCheckoutSession(order, user.email, { returnUrl, platform }) : null;
     res.status(201).json({ data: { order: toOrderDto(order), checkoutUrl } });
   })
 );
@@ -87,8 +102,7 @@ orderRouter.post(
   asyncHandler(async (req, res) => {
     const { id: userId } = currentUser(req);
     const order = await findOwnOrder(Number(req.params.id), userId);
-    const cancellable = order.status === 'PENDING_PAYMENT' || (['PENDING', 'CONFIRMED'].includes(order.status) && order.paymentStatus === 'UNPAID');
-    if (!cancellable) throw badRequest('This order can no longer be cancelled online. Please contact support.');
+    if (!CANCELLABLE.customer.includes(order.status)) throw badRequest('This order can no longer be cancelled online. Please contact support.', 'CANCEL_NOT_ALLOWED');
 
     await cancelOrder(order.id, 'Cancelled by customer');
     res.json({ data: toOrderDto(await findOwnOrder(order.id, userId)) });
@@ -98,12 +112,26 @@ orderRouter.post(
 orderRouter.post(
   '/:id/pay',
   validate('params', idParams),
+  validate('body', returnOptions),
   asyncHandler(async (req, res) => {
     const user = currentUser(req);
     const order = await findOwnOrder(Number(req.params.id), user.id);
     if (order.paymentMethod !== 'STRIPE' || order.status !== 'PENDING_PAYMENT') throw badRequest('This order is not waiting for a card payment.');
 
-    res.json({ data: { checkoutUrl: await createCheckoutSession(order, user.email) } });
+    res.json({ data: { checkoutUrl: await createCheckoutSession(order, user.email, req.body) } });
+  })
+);
+
+orderRouter.post(
+  '/:id/switch-to-cod',
+  validate('params', idParams),
+  asyncHandler(async (req, res) => {
+    const { id: userId } = currentUser(req);
+    const order = await findOwnOrder(Number(req.params.id), userId);
+    if (order.paymentMethod !== 'STRIPE' || order.status !== 'PENDING_PAYMENT') throw badRequest('This order is not waiting for a card payment.');
+
+    await switchToCod(order.id);
+    res.json({ data: toOrderDto(await findOwnOrder(order.id, userId)) });
   })
 );
 

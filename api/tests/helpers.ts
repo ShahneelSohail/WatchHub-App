@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import request from 'supertest';
-import type { Role, StrapType } from '@prisma/client';
+import type { OrderStatus, PaymentMethod, PaymentStatus, Role, StrapType } from '@prisma/client';
 import { createApp } from '../src/app';
 import { prisma } from '../src/lib/prisma';
 
@@ -53,7 +53,10 @@ interface WatchOverrides {
   stock?: number;
   status?: 'DRAFT' | 'PUBLISHED';
   hasBeltOption?: boolean;
-  colors?: { name: string; hex: string }[];
+  colors?: { name: string; hex: string; stock?: number }[];
+  trackColorStock?: boolean;
+  lowStockThreshold?: number;
+  sku?: string;
   brandId?: number;
   categoryId?: number;
 }
@@ -63,7 +66,7 @@ export const createWatch = async (overrides: WatchOverrides = {}) => {
   const base = overrides.brandId && overrides.categoryId ? { brand: { id: overrides.brandId }, category: { id: overrides.categoryId } } : await createCatalogBase();
   return prisma.watch.create({
     data: {
-      sku: `SKU-${n}`,
+      sku: overrides.sku ?? `SKU-${n}`,
       slug: `test-watch-${n}`,
       name: overrides.name ?? `Test Watch ${n}`,
       description: 'A reliable watch for testing.',
@@ -74,6 +77,8 @@ export const createWatch = async (overrides: WatchOverrides = {}) => {
       stock: overrides.stock ?? 10,
       status: overrides.status ?? 'PUBLISHED',
       hasBeltOption: overrides.hasBeltOption ?? false,
+      trackColorStock: overrides.trackColorStock ?? false,
+      lowStockThreshold: overrides.lowStockThreshold ?? 5,
       images: ['/watches/test.webp'],
       colors: { create: overrides.colors ?? [] },
     },
@@ -104,3 +109,39 @@ export const createDeliveredOrder = (userId: number, watchId: number) =>
       items: { create: { watchId, name: 'Test Watch', quantity: 1, unitPrice: 100 } },
     },
   });
+
+interface OrderOverrides {
+  status?: OrderStatus;
+  paymentMethod?: PaymentMethod;
+  paymentStatus?: PaymentStatus;
+  total?: number;
+  watchId?: number;
+  quantity?: number;
+  productColor?: string;
+  createdAt?: Date;
+  stripeSessionId?: string;
+}
+
+export const createOrder = async (userId: number, overrides: OrderOverrides = {}) => {
+  const watchId = overrides.watchId ?? (await createWatch({ stock: 20 })).id;
+  const total = overrides.total ?? 100;
+  const status = overrides.status ?? 'PENDING';
+  return prisma.order.create({
+    data: {
+      userId,
+      status,
+      paymentMethod: overrides.paymentMethod ?? 'COD',
+      paymentStatus: overrides.paymentStatus ?? 'UNPAID',
+      shippingMethod: 'STANDARD',
+      subtotal: total,
+      shippingCost: 0,
+      discount: 0,
+      total,
+      shippingAddress: {},
+      createdAt: overrides.createdAt,
+      stripeSessionId: overrides.stripeSessionId,
+      items: { create: { watchId, name: 'Test Watch', quantity: overrides.quantity ?? 1, unitPrice: total, productColor: overrides.productColor } },
+      events: { create: { status } },
+    },
+  });
+};

@@ -18,7 +18,7 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
   const known = error instanceof Prisma.PrismaClientKnownRequestError ? PRISMA_ERRORS[error.code] : undefined;
   const handled = error instanceof AppError ? error : known;
   if (handled) {
-    return res.status(handled.status).json({ error: { message: handled.message, details: handled.details } });
+    return res.status(handled.status).json({ error: { message: handled.message, code: handled.code, details: handled.details } });
   }
   if (error instanceof MulterError) {
     return res.status(400).json({ error: { message: error.message } });

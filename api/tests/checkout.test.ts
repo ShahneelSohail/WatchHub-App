@@ -25,7 +25,7 @@ describe('checkout options', () => {
   it('tells the web app whether card payments are available and what shipping costs', async () => {
     const { agent } = await signedInUser();
     const res = await agent.get('/api/checkout/options').expect(200);
-    expect(res.body.data).toEqual({ cardPayments: true, shippingCosts: { STANDARD: 0, EXPRESS: 25 } });
+    expect(res.body.data).toEqual({ cardPayments: true, shippingCosts: { STANDARD: 0, EXPRESS: 25 }, codLimit: 3000 });
   });
 });
 
@@ -35,7 +35,7 @@ describe('checkout quote', () => {
     await prisma.coupon.create({ data: { code: 'TEN', type: 'PERCENTAGE', value: 10 } });
 
     const res = await agent.post('/api/checkout/quote').send({ shippingMethod: 'EXPRESS', couponCode: 'ten' }).expect(200);
-    expect(res.body.data).toEqual({ subtotal: 200, shippingCost: 25, discount: 20, total: 205, couponCode: 'TEN' });
+    expect(res.body.data).toMatchObject({ subtotal: 200, shippingCost: 25, discount: 20, total: 205, couponCode: 'TEN', codAvailable: true });
   });
 
   it.each([

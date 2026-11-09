@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const email = z.string().trim().toLowerCase().email('Invalid email format').max(255);
-const password = z.string().min(8, 'Password must be at least 8 characters long').max(100);
+export const password = z.string().min(8, 'Password must be at least 8 characters long').max(100);
 export const phone = z
   .string()
   .trim()
@@ -25,6 +25,13 @@ export const profileSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(100, 'Name cannot exceed 100 characters'),
   email,
   phone,
+});
+
+export const forgotPasswordSchema = z.object({ email });
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Reset token is required').max(200),
+  password,
 });
 
 export const changePasswordSchema = z.object({

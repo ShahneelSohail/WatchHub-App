@@ -17,6 +17,7 @@ const addressSchema = z.object({
   zip: required('ZIP code', 20),
   country: required('Country', 100),
   phone,
+  label: z.string().trim().max(40).nullish().transform(value => value || null),
   isDefault: z.boolean().default(false),
 });
 
