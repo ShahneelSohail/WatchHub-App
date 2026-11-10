@@ -159,10 +159,10 @@ const COUPONS = [
 ];
 
 const BANNERS = [
-  { imageUrl: '/watches/kairos-chronos-1.webp', eyebrow: 'No 01 · Signature', title: 'Precision, perfected', subtitle: 'The Kairos Chronos: rose gold, integrated, unmistakable.', link: '/watches/kairos-chronos', slug: 'kairos-chronos', isActive: true },
-  { imageUrl: '/watches/regalia-day-date-1.webp', eyebrow: 'No 02 · Offer', title: 'Timeless, on sale', subtitle: 'The Regalia Day-Date, now $290 below its list price.', link: '/watches/regalia-day-date', slug: 'regalia-day-date', isActive: true },
-  { imageUrl: '/watches/pulse-orbit-2.webp', eyebrow: 'No 03 · Smart', title: 'Smarter every day', subtitle: 'GPS, calls and five days of battery with the Pulse Orbit.', link: '/watches/pulse-orbit', slug: 'pulse-orbit', isActive: true },
-  { imageUrl: '/watches/aurora-pave-1.webp', eyebrow: 'No 04 · Coming soon', title: 'Aurora after dark', subtitle: 'A midnight pave edition, arriving soon.', link: '/watches/aurora-pave', slug: 'aurora-pave', isActive: false },
+  { imageUrl: '/watches/kairos-chronos-1.webp', eyebrow: 'Signature', title: 'Precision, perfected', subtitle: 'The Kairos Chronos: rose gold, integrated, unmistakable.', link: '/watches/kairos-chronos', slug: 'kairos-chronos', isActive: true },
+  { imageUrl: '/watches/regalia-day-date-1.webp', eyebrow: 'Offer', title: 'Timeless, on sale', subtitle: 'The Regalia Day-Date, now $290 below its list price.', link: '/watches/regalia-day-date', slug: 'regalia-day-date', isActive: true },
+  { imageUrl: '/watches/pulse-orbit-2.webp', eyebrow: 'Smart', title: 'Smarter every day', subtitle: 'GPS, calls and five days of battery with the Pulse Orbit.', link: '/watches/pulse-orbit', slug: 'pulse-orbit', isActive: true },
+  { imageUrl: '/watches/aurora-pave-1.webp', eyebrow: 'Coming soon', title: 'Aurora after dark', subtitle: 'A midnight pave edition, arriving soon.', link: '/watches/aurora-pave', slug: 'aurora-pave', isActive: false },
 ];
 
 const FAQS = [
