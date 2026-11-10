@@ -11,7 +11,7 @@ class CloudinaryService {
   // TODO: Move to environment variables once flutter_dotenv path issue is resolved
   static const String cloudName = 'deyzo6ops';
   static const String apiKey = '882353846583382';
-  static const String apiSecret = '2RpDsDp_n1xcMxlo09GopMejeoE';
+  static const String apiSecret = 'REMOVED_SECRET';
 
   static String get uploadUrl =>
       'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
