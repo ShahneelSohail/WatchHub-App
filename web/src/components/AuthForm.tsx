@@ -47,7 +47,16 @@ const TABS = [
 const EMAIL_PATTERN = /^\S+@\S+\.\S{2,}$/;
 const strongPassword = (value: string) => value.length >= 8 && /\d/.test(value) && /[A-Z]/.test(value);
 
-const EXPIRED_LINK = 'This reset link has expired or was already used.';
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD;
+
+const DEMO_ACCOUNTS = [
+  { label: 'Admin', email: 'admin@watchhub.test' },
+  { label: 'Maya', email: 'maya@watchhub.test' },
+  { label: 'Omar', email: 'omar@watchhub.test' },
+  { label: 'Lena', email: 'lena@watchhub.test' },
+];
+
+const EXPIRED_LINK ='This reset link has expired or was already used.';
 
 const requestPasswordReset = (email: string) => api.post('/auth/forgot-password', { email });
 const submitNewPassword = (token: string, password: string) => api.post('/auth/reset-password', { token, password });
@@ -117,6 +126,18 @@ export const AuthForm = ({ mode }: { mode: Mode }) => {
     } catch (failure) {
       setErrors({ form: failure instanceof ApiError && failure.code === 'RESET_TOKEN_INVALID' ? EXPIRED_LINK : failure instanceof Error ? failure.message : 'Something went wrong.' });
     } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const demoLogin = async (email: string) => {
+    setErrors({});
+    setSubmitting(true);
+    try {
+      const user = await login({ email, password: DEMO_PASSWORD! });
+      router.replace(next?.startsWith('/') ? next : user.role === 'ADMIN' ? '/admin' : '/');
+    } catch (failure) {
+      setErrors({ form: failure instanceof Error ? failure.message : 'Something went wrong.' });
       setSubmitting(false);
     }
   };
@@ -204,6 +225,16 @@ export const AuthForm = ({ mode }: { mode: Mode }) => {
                   </Link>
                 )}
               </form>
+              {mode === 'login' && DEMO_PASSWORD && (
+                <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4 text-[13px] text-ink-secondary">
+                  Demo · try a role:
+                  {DEMO_ACCOUNTS.map(account => (
+                    <Button key={account.email} type="button" variant="secondary" size="sm" disabled={submitting} onClick={() => demoLogin(account.email)}>
+                      {account.label}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>
